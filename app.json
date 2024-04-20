@@ -13,13 +13,23 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "android": {
       "package": "com.Karuna.finaly",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "be61f328-7de5-4143-bd05-e020afc0c705"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.Karuna.finaly"
     }
   }
 }

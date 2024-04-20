@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { initializeApp } from '@firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from '@firebase/auth';
+import { initializeAuth, getReactNativePersistence, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from '@firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation } from '@react-navigation/native';
 
+// Your Firebase config here
 const firebaseConfig = {
-  // Your Firebase config here
-  // Make sure to replace the placeholder values with your actual Firebase config
+  // Your Firebase config object
   apiKey: "AIzaSyCfn8bx8CRYijBMjCKtMP8v3xkvqOHHktY",
   authDomain: "atchaya-paathiram-83df1.firebaseapp.com",
   projectId: "atchaya-paathiram-83df1",
@@ -15,15 +15,17 @@ const firebaseConfig = {
   messagingSenderId: "535479398498",
   appId: "1:535479398498:web:34aca664dcc8e92905613b",
   measurementId: "G-HE4D6X6FPR"
-
-
 };
 
-const App = () => {
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const navigation = useNavigation();
 
+// Initialize Firebase app only once
+const app = initializeApp(firebaseConfig);
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
+const App = () => {
+  const navigation = useNavigation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
@@ -34,8 +36,9 @@ const App = () => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
     });
+
     return unsubscribe;
-  }, [auth]);
+  }, []);
 
   const handleAuthentication = async () => {
     try {
@@ -139,7 +142,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
     color: 'black',
-   
   },
   input: {
     height: 40,
@@ -151,13 +153,11 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 15,
-    
     color: 'white',
   },
   toggleText: {
     color: 'black',
     textAlign: 'center',
-    
   },
   emailText: {
     fontSize: 18,
