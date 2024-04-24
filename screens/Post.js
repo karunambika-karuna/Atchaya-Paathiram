@@ -1,62 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Image } from 'react-native';
 import firebase from 'firebase/compat/app';
 import 'firebase/compat/database';
-import Donation from './Mydonations';
-import Sale from './Mysales';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyCfn8bx8CRYijBMjCKtMP8v3xkvqOHHktY",
-    authDomain: "atchaya-paathiram-83df1.firebaseapp.com",
-    projectId: "atchaya-paathiram-83df1",
-    storageBucket: "atchaya-paathiram-83df1.appspot.com",
-    messagingSenderId: "535479398498",
-    appId: "1:535479398498:web:34aca664dcc8e92905613b",
-    measurementId: "G-HE4D6X6FPR"
-  
-  };
-  
+  apiKey: "AIzaSyCfn8bx8CRYijBMjCKtMP8v3xkvqOHHktY",
+  authDomain: "atchaya-paathiram-83df1.firebaseapp.com",
+  projectId: "atchaya-paathiram-83df1",
+  storageBucket: "atchaya-paathiram-83df1.appspot.com",
+  messagingSenderId: "535479398498",
+  appId: "1:535479398498:web:34aca664dcc8e92905613b",
+  measurementId: "G-HE4D6X6FPR"
 
+};
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
 
-const Post = () => {
+const Post = ({ navigation }) => {
   const [posts, setPosts] = useState([]);
-  const [filteredPosts, setFilteredPosts] = useState([]);
   const [filter, setFilter] = useState('All');
+  const currentUser = firebase.auth().currentUser;
 
   useEffect(() => {
-    const databaseRef = firebase.database().ref('posts');
+    const databaseRef = firebase.database().ref();
     databaseRef.on('value', (snapshot) => {
       if (snapshot.exists()) {
         const postData = snapshot.val();
-        const postArray = Object.values(postData);
-        setPosts(postArray);
-        setFilteredPosts(postArray);
+        let postArray = [];
+        if (filter === 'All') {
+          if (postData.donations) postArray = postArray.concat(Object.values(postData.donations));
+          if (postData.sales) postArray = postArray.concat(Object.values(postData.sales));
+        } else if (filter === 'Donation') {
+          if (postData.donations) postArray = Object.values(postData.donations);
+        } else if (filter === 'Sale') {
+          if (postData.sales) postArray = Object.values(postData.sales);
+        }
+        setPosts(postArray.filter(post => post.userId !== currentUser?.uid));
       }
     });
 
     return () => {
       databaseRef.off();
     };
-  }, []);
-
-  useEffect(() => {
-    if (filter === 'All') {
-      setFilteredPosts(posts);
-    } else if (filter === 'Donation') {
-      const filtered = posts.filter(post => post.type === 'Donation');
-      setFilteredPosts(filtered);
-    } else if (filter === 'Sale') {
-      const filtered = posts.filter(post => post.type === 'Sale');
-      setFilteredPosts(filtered);
-    }
-  }, [filter, posts]);
+  }, [filter, currentUser?.uid]);
 
   const handleFilter = (type) => {
     setFilter(type);
   };
+
+  const handleOrder = (item) => {
+    console.log("Ordering item:", item);
+    navigation.navigate('OrderPage', { item: item });
+  };
+
+  const renderPostItem = ({ item, index }) => (
+    <View key={index} style={styles.postContainer}>
+      <Text style={styles.postTitle}>{item.title}</Text>
+      <Text style={styles.postType}>{item.type}</Text>
+      <Text style={styles.postDescription}>Description: {item.description}</Text>
+      <Text style={styles.postDescription}>Location: {item.location}</Text>
+      {item.cooked ? (
+        <>
+          <Text style={styles.postDescription}>Manufacturing Date: {item.manufacturingDate}</Text>
+          <Text style={styles.postDescription}>Expiry Date: {item.expiryDate}</Text>
+        </>
+      ) : (
+        <Text style={styles.postDescription}>Pick Up Time: {item.pickUpTime}</Text>
+      )}
+      <Text style={styles.postDescription}>Quantity: {item.quantity}</Text>
+      {item.imageURL && <Image source={{ uri: item.imageURL }} style={styles.postImage} />}
+      <Text style={styles.postDescription}>Phone Number: {item.phoneNumber}</Text>
+      <TouchableOpacity style={styles.orderButton} onPress={() => handleOrder(item)}>
+        <Text style={styles.buttonText}>Order</Text>
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -80,8 +99,11 @@ const Post = () => {
           <Text style={[styles.filterButtonText, filter === 'Sale' && styles.filterButtonTextActive]}>Sale</Text>
         </TouchableOpacity>
       </View>
-      {(filter === 'All' || filter === 'Donation') && <Donation />}
-      {(filter === 'All' || filter === 'Sale') && <Sale />}
+      <FlatList
+        data={posts}
+        renderItem={renderPostItem}
+        keyExtractor={(item, index) => index.toString()}
+      />
     </View>
   );
 };
@@ -128,6 +150,24 @@ const styles = StyleSheet.create({
   },
   postDescription: {
     fontSize: 16,
+  },
+  postImage: {
+    width: '100%',
+    height: 200,
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  orderButton: {
+    backgroundColor: '#f94d00',
+    padding: 15,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

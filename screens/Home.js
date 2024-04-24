@@ -4,11 +4,11 @@ const logo=require("../assets/logo.png");
 
 const Welcome = ({ navigation }) => {
   const handleSignIn = () => {
-    // Navigate to the sign up/login page
+    
     navigation.navigate('Signup');
   };
 
-  // Load custom font
+
 
   return (
     <View style={styles.container}>

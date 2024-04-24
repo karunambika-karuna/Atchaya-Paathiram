@@ -5,7 +5,7 @@ import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createMaterialBottomTabNavigator } from '@react-navigation/material-bottom-tabs';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Import your screen components
+
 import HomeScreen from './Home';
 import DonateScreen from './Donate';
 import SellScreen from './Sell';
@@ -14,6 +14,7 @@ import NotificationsScreen from './Notification';
 import MyDonations from './Mydonations';
 import MySales from './Mysales';
 import Post from './Post';
+import ChatScreen from './ChatScreen';
 const Tab = createMaterialBottomTabNavigator();
 const Drawer = createDrawerNavigator();
 
@@ -46,7 +47,19 @@ const DrawerScreens = {
       ),
     },
   },
+  Chat: {
+    screen: ChatScreen,
+    navigationOptions: {
+      tabBarLabel: 'Chat',
+      tabBarIcon: ({ color }) => (
+        <MaterialCommunityIcons name="chat" color={color} size={26} />
+      ),
+    },
+  },
 };
+
+
+
 
 function TabNavigator() {
   return (
@@ -81,7 +94,7 @@ function Feeds() {
         drawerLabelStyle: {
           fontWeight: 'bold',
         },
-        activeTintColor: '#FFFFFF', // Change the color when touched
+        activeTintColor: '#FFFFFF',
       }}
     >
   

@@ -5,9 +5,9 @@ import firebase from 'firebase/compat/app';
 import 'firebase/compat/auth';
 import 'firebase/compat/database';
 import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
 const firebaseConfig = {
-  // Your Firebase config object
+  
   apiKey: "AIzaSyCfn8bx8CRYijBMjCKtMP8v3xkvqOHHktY",
   authDomain: "atchaya-paathiram-83df1.firebaseapp.com",
   projectId: "atchaya-paathiram-83df1",
@@ -26,7 +26,7 @@ const ProfileScreen = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [address, setAddress] = useState('');
-  const [location, setLocation] = useState(null); // Define location state
+  const [location, setLocation] = useState(null); 
 
   useEffect(() => {
     checkUserSession();

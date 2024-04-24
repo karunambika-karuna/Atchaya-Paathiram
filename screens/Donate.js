@@ -1,3 +1,5 @@
+// DonateScreen.js
+
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Image, ScrollView, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -15,7 +17,9 @@ const firebaseConfig = {
   messagingSenderId: "535479398498",
   appId: "1:535479398498:web:34aca664dcc8e92905613b",
   measurementId: "G-HE4D6X6FPR"
+
 };
+
 
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
@@ -33,6 +37,8 @@ const DonateScreen = () => {
   const [quantity, setQuantity] = useState('1 kgs');
   const [selectedPickUpTime, setSelectedPickUpTime] = useState(null);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const currentUser = firebase.auth().currentUser;
 
   useEffect(() => {
     fetchCurrentLocation();
@@ -60,21 +66,35 @@ const DonateScreen = () => {
 
   const handleSubmit = async () => {
     try {
-      const databaseRef = firebase.database().ref('donate');
+      if (!currentUser) {
+        throw new Error('User not authenticated!');
+      }
+
+      const databaseRef = firebase.database().ref(`users/${currentUser.uid}/donations`);
       const newDonationRef = databaseRef.push();
-      await newDonationRef.set({
+      const data = {
         description,
         location,
         cooked,
-        manufacturingDate: cooked ? null : manufacturingDate.toString(),
-        expiryDate: cooked ? null : expiryDate.toString(),
-        pickUpTime: cooked ? selectedPickUpTime.toString() : null,
+        manufacturingDate: cooked && manufacturingDate ? manufacturingDate.toString() : null,
+        expiryDate: !cooked && expiryDate ? expiryDate.toString() : null,
+        pickUpTime: cooked && selectedPickUpTime ? selectedPickUpTime.toString() : null,
         quantity,
         imageURL: selectedImage || null,
         phoneNumber,
         timestamp: firebase.database.ServerValue.TIMESTAMP,
-      });
+      };
+      await newDonationRef.set(data);
+
+      // Add the donation to the donations section
+      const allDonationsRef = firebase.database().ref('donations');
+      const allDonationNewRef = allDonationsRef.push();
+      await allDonationNewRef.set(data);
+
       console.log('Donation details submitted successfully');
+    
+      setSubmitSuccess(true);
+      alert('Donation details submitted successfully!');
     } catch (error) {
       console.error('Error submitting donation details:', error);
       alert('Failed to submit donation details. Please try again.');
@@ -124,9 +144,12 @@ const DonateScreen = () => {
       <View style={styles.container}>
         <Text style={styles.heading}>Hey Generous, Fill it</Text>
         <View style={styles.form}>
+          {submitSuccess && (
+            <Text style={styles.successMessage}>Donation submitted successfully!</Text>
+          )}
           <Button title="Upload Image" onPress={handleImageUpload} color="#FF7F50" />
           {selectedImage && <Image source={{ uri: selectedImage }} style={styles.selectedImage} />}
-          <Button title={cooked ? 'Your Food Is: ' : 'Your Food Is: '}  color="#FF7F50" />
+          <Button title={cooked ? 'Your Food Is: Cooked' : 'Your Food Is: Non-cooked'} onPress={() => {}} color="#FF7F50" />
           <TextInput
             style={styles.input}
             placeholder="Description (max 50 characters)"
@@ -266,6 +289,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     marginBottom: 10,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: 'green',
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
 

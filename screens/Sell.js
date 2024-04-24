@@ -15,6 +15,7 @@ const firebaseConfig = {
   messagingSenderId: "535479398498",
   appId: "1:535479398498:web:34aca664dcc8e92905613b",
   measurementId: "G-HE4D6X6FPR"
+
 };
 
 if (!firebase.apps.length) {
@@ -36,6 +37,9 @@ const SellScreen = () => {
   const [selectedPickUpTime, setSelectedPickUpTime] = useState(null);
   const [sellingPrice, setSellingPrice] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const currentUser = firebase.auth().currentUser;
+
   useEffect(() => {
     fetchCurrentLocation();
   }, []);
@@ -56,9 +60,13 @@ const SellScreen = () => {
 
   const handleSubmit = async () => {
     try {
-      const databaseRef = firebase.database().ref('sell');
-      const newDonationRef = databaseRef.push();
-      await newDonationRef.set({
+      if (!currentUser) {
+        throw new Error('User not authenticated!');
+      }
+
+      const databaseRef = firebase.database().ref(`users/${currentUser.uid}/sales`);
+      const newSaleRef = databaseRef.push();
+      await newSaleRef.set({
         description,
         location,
         cooked,
@@ -66,14 +74,35 @@ const SellScreen = () => {
         expiryDate: cooked ? null : expiryDate.toString(),
         pickUpTime: cooked ? selectedPickUpTime.toString() : null,
         quantity,
-        imageURL: selectedImage ? await getImageURL() : null,
+        imageURL: selectedImage ? await uploadImage(selectedImage) : null,
         phoneNumber,
         timestamp: firebase.database.ServerValue.TIMESTAMP,
         sellingPrice
       });
+
+    
+      const allSalesRef = firebase.database().ref('sales');
+      const allSaleNewRef = allSalesRef.push();
+      await allSaleNewRef.set({
+        description,
+        location,
+        cooked,
+        manufacturingDate: cooked ? null : manufacturingDate.toString(),
+        expiryDate: cooked ? null : expiryDate.toString(),
+        pickUpTime: cooked ? selectedPickUpTime.toString() : null,
+        quantity,
+        imageURL: selectedImage ? await uploadImage(selectedImage) : null,
+        phoneNumber,
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        sellingPrice
+      });
+
       console.log('Sale details submitted successfully');
+      setSubmitSuccess(true);
+      alert('Sale details submitted successfully!');
     } catch (error) {
       console.error('Error submitting sale details:', error);
+      alert('Failed to submit sale details. Please try again.');
     }
   };
 
@@ -86,44 +115,13 @@ const SellScreen = () => {
       await storageRef.put(blob);
       console.log('Image uploaded successfully');
       const imageURL = await storageRef.getDownloadURL();
-      saveDataToRealtimeDatabase(imageURL);
+      return imageURL;
     } catch (error) {
       console.error('Error uploading image:', error);
-    }
-  };
-  const getImageURL = async () => {
-    try {
-      const storageRef = firebase.storage().ref();
-      const imageRef = storageRef.child('images/' + Date.now());
-      return await imageRef.getDownloadURL();
-    } catch (error) {
-      console.error('Error getting image URL:', error);
-      throw error;
+      alert('Failed to upload image. Please try again.');
     }
   };
   
-  const saveDataToRealtimeDatabase = async (imageURL) => {
-    try {
-      const databaseRef = firebase.database().ref('sell');
-      const newDonationRef = databaseRef.push();
-      await newDonationRef.set({
-        description,
-        location,
-        cooked,
-        manufacturingDate: cooked ? null : manufacturingDate.toString(),
-        expiryDate: cooked ? null : expiryDate.toString(),
-        pickUpTime: cooked ? selectedPickUpTime.toString() : null,
-        quantity,
-        imageURL,
-        timestamp: firebase.database.ServerValue.TIMESTAMP,
-        sellingPrice
-      });
-      console.log('Sale details submitted successfully');
-    } catch (error) {
-      console.error('Error submitting sale details:', error);
-    }
-  };
-
   const fetchCurrentLocation = async () => {
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -155,6 +153,9 @@ const SellScreen = () => {
       <View style={styles.container}>
         <Text style={styles.heading}>Hey Seller, Fill it</Text>
         <View style={styles.form}>
+          {submitSuccess && (
+            <Text style={styles.successMessage}>Sale Done</Text>
+          )}
           <Button title="Upload Image" onPress={handleImageUpload} color="#FF7F50" />
           {selectedImage && <Image source={{ uri: selectedImage }} style={styles.selectedImage} />}
           <Button title={cooked ? 'Your Food Is: ' : 'Your Food Is: '}  color="#FF7F50" />
@@ -235,7 +236,7 @@ const SellScreen = () => {
             placeholder="Phone Number"
             value={phoneNumber}
             onChangeText={text => setPhoneNumber(text)}
-            />
+          />
           <Button title="Fetch Location" onPress={fetchCurrentLocation} color="#FF7F50" />
           <Text style={styles.locationText}>{location}</Text>
           <Button title="Sell" onPress={handleSubmit} color='#FF7F50' />
@@ -303,6 +304,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     marginBottom: 10,
+  },
+  successMessage: {
+    fontSize: 16,
+    color: 'orange',
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
 
